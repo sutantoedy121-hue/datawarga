@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin &mdash; Data Rumah Warga</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-mark">DW</span>
+        <div class="brand-text">
+          <strong>Data Rumah Warga</strong>
+          <small>Panel Admin</small>
+        </div>
+      </div>
+      <button id="logout-btn" class="header-link header-link-btn" hidden>Keluar</button>
+    </div>
+  </header>
+
+  <main class="page page-admin">
+
+    <!-- ===== LOGIN VIEW ===== -->
+    <section id="login-view" class="login-wrap">
+      <form id="login-form" class="card login-card" novalidate>
+        <h1>Masuk sebagai Admin</h1>
+        <p class="hint-text">Gunakan akun admin yang sudah didaftarkan di Supabase Auth.</p>
+
+        <div class="field">
+          <label for="login-email">Email</label>
+          <input type="email" id="login-email" required>
+        </div>
+
+        <div class="field">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" required>
+        </div>
+
+        <div id="login-message" class="form-message" hidden></div>
+
+        <button type="submit" id="login-btn" class="btn-primary">Masuk</button>
+      </form>
+    </section>
+
+    <!-- ===== DASHBOARD VIEW ===== -->
+    <section id="dashboard-view" hidden>
+
+      <!-- Ringkasan statistik -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-value" id="stat-total">0</span>
+          <span class="stat-label">Total Data</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="stat-menunggu">0</span>
+          <span class="stat-label">Menunggu Verifikasi</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="stat-anak">0</span>
+          <span class="stat-label">Anak Tidak Sekolah</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="stat-rumah">0</span>
+          <span class="stat-label">Rumah Belum Berplester</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="stat-listrik">0</span>
+          <span class="stat-label">Belum Ada Listrik</span>
+        </div>
+      </div>
+
+      <!-- Filter -->
+      <div class="card filter-bar">
+        <div class="field">
+          <label for="filter-search">Cari (nama / NIK / no KK)</label>
+          <input type="text" id="filter-search" placeholder="Ketik untuk mencari...">
+        </div>
+
+        <div class="field">
+          <label for="filter-status">Status Verifikasi</label>
+          <select id="filter-status">
+            <option value="">Semua</option>
+            <option value="menunggu">Menunggu</option>
+            <option value="terverifikasi">Terverifikasi</option>
+            <option value="ditolak">Ditolak</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="filter-kategori">Kategori Permasalahan</label>
+          <select id="filter-kategori">
+            <option value="">Semua</option>
+            <option value="pendidikan">Pendidikan</option>
+            <option value="perumahan">Perumahan</option>
+            <option value="kelistrikan">Kelistrikan</option>
+            <option value="ekonomi">Ekonomi</option>
+            <option value="kesehatan">Kesehatan</option>
+            <option value="lainnya">Lainnya</option>
+          </select>
+        </div>
+
+        <button id="filter-reset-btn" class="btn-secondary">Reset</button>
+        <button id="export-btn" class="btn-primary">Ekspor Excel</button>
+      </div>
+
+      <!-- Tabel data -->
+      <div class="card table-card">
+        <div class="table-scroll">
+          <table id="data-table">
+            <thead>
+              <tr>
+                <th>Nama Kepala Keluarga</th>
+                <th>No. KK</th>
+                <th>RT/RW</th>
+                <th>Kategori</th>
+                <th>Status</th>
+                <th>Tanggal</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="data-table-body">
+              <!-- diisi oleh admin.js -->
+            </tbody>
+          </table>
+        </div>
+        <p id="table-empty" class="hint-text" hidden>Belum ada data yang cocok dengan filter ini.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== MODAL DETAIL ===== -->
+  <div id="detail-modal" class="modal-overlay" hidden>
+    <div class="modal-box">
+      <button id="modal-close-btn" class="modal-close">&times;</button>
+      <h2>Detail Data Rumah Tangga</h2>
+      <div id="modal-content" class="modal-content">
+        <!-- diisi oleh admin.js -->
+      </div>
+      <div class="modal-actions">
+        <button id="btn-hapus" class="btn-outline-danger">Hapus Data</button>
+        <button id="btn-tolak" class="btn-outline-danger">Tolak</button>
+        <button id="btn-verifikasi" class="btn-primary">Verifikasi</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
