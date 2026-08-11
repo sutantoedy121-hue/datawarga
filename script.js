@@ -14,24 +14,32 @@ const form = document.getElementById("survey-form");
 const submitBtn = document.getElementById("submit-btn");
 const formMessage = document.getElementById("form-message");
 
-const checkAnakTidakSekolah = document.getElementById("anak_tidak_sekolah");
-const wrapJumlahAnak = document.getElementById("wrap-jumlah-anak");
+const statusDesilSelect = document.getElementById("status_desil");
+const wrapAnakInginKuliah = document.getElementById("wrap-anak-ingin-kuliah");
+const anakInginKuliahCheckbox = document.getElementById("anak_ingin_kuliah");
 
-const kategoriLainnyaCheck = document.getElementById("kategori_lainnya_check");
-const wrapKategoriLainnya = document.getElementById("wrap-kategori-lainnya");
+const wrapNamaAnak = document.getElementById("wrap-nama-anak");
+const namaAnakTextarea = document.getElementById("nama_anak_tidak_sekolah");
+const anakTidakSekolahRadios = document.querySelectorAll('input[name="anak_tidak_sekolah"]');
 
-// Tampilkan/sembunyikan field jumlah anak sesuai checkbox
-checkAnakTidakSekolah.addEventListener("change", () => {
-  wrapJumlahAnak.hidden = !checkAnakTidakSekolah.checked;
+// ================= DESIL: TAMPILKAN CENTANG "ANAK INGIN KULIAH" HANYA UNTUK DESIL 1-5 =================
+statusDesilSelect.addEventListener("change", () => {
+  const isDesil1to5 = ["1", "2", "3", "4", "5"].includes(statusDesilSelect.value);
+  wrapAnakInginKuliah.hidden = !isDesil1to5;
+  if (!isDesil1to5) {
+    anakInginKuliahCheckbox.checked = false;
+  }
 });
 
-// Tampilkan/sembunyikan input teks "kategori lainnya"
-kategoriLainnyaCheck.addEventListener("change", () => {
-  wrapKategoriLainnya.hidden = !kategoriLainnyaCheck.checked;
+// ================= ANAK TIDAK SEKOLAH: TAMPILKAN KOLOM NAMA JIKA "YA" =================
+anakTidakSekolahRadios.forEach((radio) => {
+  radio.addEventListener("change", () => {
+    wrapNamaAnak.hidden = radio.value !== "ya" || !radio.checked;
+  });
 });
 
 // ================= TAMPILKAN NAMA FILE DI UPLOAD PILL =================
-const uploadFileIds = ["foto_kk", "foto_ktp", "foto_kondisi_rumah"];
+const uploadFileIds = ["foto_kk", "foto_rumah"];
 
 uploadFileIds.forEach((id) => {
   const input = document.getElementById(id);
@@ -69,6 +77,12 @@ async function uploadFile(file, folder) {
   return fileName;
 }
 
+// ================= HELPER: AMBIL NILAI RADIO YA/TIDAK =================
+function getRadioValue(name) {
+  const checked = document.querySelector(`input[name="${name}"]:checked`);
+  return checked ? checked.value === "ya" : false;
+}
+
 // ================= SUBMIT FORM =================
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -84,53 +98,44 @@ form.addEventListener("submit", async (e) => {
 
   try {
     const fotoKKFile = document.getElementById("foto_kk").files[0];
-    const fotoKTPFile = document.getElementById("foto_ktp").files[0];
-    const fotoRumahFile = document.getElementById("foto_kondisi_rumah").files[0];
+    const fotoRumahFile = document.getElementById("foto_rumah").files[0];
 
     // Upload semua file dulu ke Storage
-    const [fotoKKPath, fotoKTPPath, fotoRumahPath] = await Promise.all([
+    const [fotoKKPath, fotoRumahPath] = await Promise.all([
       uploadFile(fotoKKFile, "kk"),
-      uploadFile(fotoKTPFile, "ktp"),
-      uploadFile(fotoRumahFile, "kondisi-rumah"),
+      uploadFile(fotoRumahFile, "rumah"),
     ]);
 
-    // Kumpulkan kategori permasalahan yang dicentang
-    const kategoriPermasalahan = Array.from(
-      document.querySelectorAll('input[name="kategori_permasalahan"]:checked')
-    ).map((el) => el.value);
+    const isDesil1to5 = ["1", "2", "3", "4", "5"].includes(statusDesilSelect.value);
+    const isAnakTidakSekolah = getRadioValue("anak_tidak_sekolah");
 
     // Susun payload sesuai kolom tabel survey_rumah_tangga
     const payload = {
+      nama_kepala_keluarga: document.getElementById("nama_kepala_keluarga").value.trim(),
       nomor_kk: document.getElementById("nomor_kk").value.trim(),
       nik: document.getElementById("nik").value.trim(),
-      nama_kepala_keluarga: document.getElementById("nama_kepala_keluarga").value.trim(),
+      pekerjaan: document.getElementById("pekerjaan").value.trim(),
+
       alamat: document.getElementById("alamat").value.trim(),
       rt: document.getElementById("rt").value.trim(),
       rw: document.getElementById("rw").value.trim(),
-      dusun: document.getElementById("dusun").value.trim(),
-      desa: document.getElementById("desa").value.trim(),
-      no_telepon: document.getElementById("no_telepon").value.trim(),
 
       foto_kk_url: fotoKKPath,
-      foto_ktp_url: fotoKTPPath,
-      foto_kondisi_rumah_url: fotoRumahPath,
+      foto_rumah_url: fotoRumahPath,
 
-      kategori_permasalahan: kategoriPermasalahan,
-      kategori_lainnya: kategoriLainnyaCheck.checked
-        ? document.getElementById("kategori_lainnya").value.trim()
-        : null,
+      status_desil: statusDesilSelect.value,
+      anak_ingin_kuliah: isDesil1to5 ? anakInginKuliahCheckbox.checked : false,
 
-      anak_tidak_sekolah: checkAnakTidakSekolah.checked,
-      jumlah_anak_tidak_sekolah: checkAnakTidakSekolah.checked
-        ? Number(document.getElementById("jumlah_anak_tidak_sekolah").value || 0)
-        : 0,
-      keterangan_anak_tidak_sekolah: document.getElementById("keterangan_anak_tidak_sekolah").value.trim(),
+      rumah_lantai_tanah: getRadioValue("rumah_lantai_tanah"),
+      belum_ada_listrik: getRadioValue("belum_ada_listrik"),
 
-      rumah_belum_berplester: document.getElementById("rumah_belum_berplester").checked,
-      belum_ada_listrik: document.getElementById("belum_ada_listrik").checked,
-
-      status_desil: document.getElementById("status_desil").value,
-      ada_anak_calon_mahasiswa: document.getElementById("ada_anak_calon_mahasiswa").checked,
+      anak_tidak_sekolah: isAnakTidakSekolah,
+      nama_anak_tidak_sekolah: isAnakTidakSekolah
+        ? namaAnakTextarea.value
+            .split("\n")
+            .map((n) => n.trim())
+            .filter(Boolean)
+        : [],
     };
 
     const { error } = await supabaseClient.from(TABLE_NAME).insert([payload]);
@@ -141,8 +146,8 @@ form.addEventListener("submit", async (e) => {
 
     showMessage("Data berhasil dikirim. Terima kasih atas partisipasinya.", "success");
     form.reset();
-    wrapJumlahAnak.hidden = true;
-    wrapKategoriLainnya.hidden = true;
+    wrapAnakInginKuliah.hidden = true;
+    wrapNamaAnak.hidden = true;
   } catch (err) {
     console.error(err);
     showMessage(`Gagal mengirim data: ${err.message}`, "error");

@@ -19,7 +19,7 @@ const loginMessage = document.getElementById("login-message");
 
 const filterSearch = document.getElementById("filter-search");
 const filterStatus = document.getElementById("filter-status");
-const filterKategori = document.getElementById("filter-kategori");
+const filterDesil = document.getElementById("filter-desil");
 const filterResetBtn = document.getElementById("filter-reset-btn");
 const exportBtn = document.getElementById("export-btn");
 
@@ -36,6 +36,12 @@ const btnHapus = document.getElementById("btn-hapus");
 let currentRows = [];
 let filteredRows = [];
 let activeRowId = null;
+
+// ================= LABEL DESIL =================
+function labelDesil(value) {
+  if (!value || value === "tidak_terdaftar") return "Tidak Terdaftar";
+  return `Desil ${value}`;
+}
 
 // ================= CEK SESI SAAT HALAMAN DIBUKA =================
 async function init() {
@@ -117,11 +123,14 @@ function renderStats(rows) {
   document.getElementById("stat-menunggu").textContent = rows.filter(
     (r) => r.status_verifikasi === "menunggu"
   ).length;
-  document.getElementById("stat-anak").textContent = rows.filter(
+  document.getElementById("stat-anak-tidak-sekolah").textContent = rows.filter(
     (r) => r.anak_tidak_sekolah
   ).length;
-  document.getElementById("stat-rumah").textContent = rows.filter(
-    (r) => r.rumah_belum_berplester
+  document.getElementById("stat-anak-ingin-kuliah").textContent = rows.filter(
+    (r) => r.anak_ingin_kuliah
+  ).length;
+  document.getElementById("stat-lantai-tanah").textContent = rows.filter(
+    (r) => r.rumah_lantai_tanah
   ).length;
   document.getElementById("stat-listrik").textContent = rows.filter(
     (r) => r.belum_ada_listrik
@@ -132,28 +141,28 @@ function renderStats(rows) {
 function applyFiltersAndRender() {
   const search = filterSearch.value.trim().toLowerCase();
   const status = filterStatus.value;
-  const kategori = filterKategori.value;
+  const desil = filterDesil.value;
 
   const filtered = currentRows.filter((row) => {
     const matchSearch =
       !search ||
       (row.nama_kepala_keluarga || "").toLowerCase().includes(search) ||
       (row.nik || "").toLowerCase().includes(search) ||
-      (row.nomor_kk || "").toLowerCase().includes(search);
+      (row.nomor_kk || "").toLowerCase().includes(search) ||
+      (row.pekerjaan || "").toLowerCase().includes(search);
 
     const matchStatus = !status || row.status_verifikasi === status;
 
-    const matchKategori =
-      !kategori || (row.kategori_permasalahan || []).includes(kategori);
+    const matchDesil = !desil || row.status_desil === desil;
 
-    return matchSearch && matchStatus && matchKategori;
+    return matchSearch && matchStatus && matchDesil;
   });
 
   filteredRows = filtered;
   renderTable(filtered);
 }
 
-[filterSearch, filterStatus, filterKategori].forEach((el) => {
+[filterSearch, filterStatus, filterDesil].forEach((el) => {
   el.addEventListener("input", applyFiltersAndRender);
   el.addEventListener("change", applyFiltersAndRender);
 });
@@ -161,7 +170,7 @@ function applyFiltersAndRender() {
 filterResetBtn.addEventListener("click", () => {
   filterSearch.value = "";
   filterStatus.value = "";
-  filterKategori.value = "";
+  filterDesil.value = "";
   applyFiltersAndRender();
 });
 
@@ -189,10 +198,6 @@ function renderTable(rows) {
   rows.forEach((row) => {
     const tr = document.createElement("tr");
 
-    const kategoriChips = (row.kategori_permasalahan || [])
-      .map((k) => `<span class="tag-chip">${k}</span>`)
-      .join("");
-
     const tanggal = row.created_at
       ? new Date(row.created_at).toLocaleDateString("id-ID", {
           day: "2-digit",
@@ -204,8 +209,10 @@ function renderTable(rows) {
     tr.innerHTML = `
       <td>${row.nama_kepala_keluarga || "-"}</td>
       <td>${row.nomor_kk || "-"}</td>
+      <td>${row.nik || "-"}</td>
+      <td>${row.pekerjaan || "-"}</td>
       <td>${row.rt || "-"}/${row.rw || "-"}</td>
-      <td>${kategoriChips || "-"}</td>
+      <td>${labelDesil(row.status_desil)}</td>
       <td>${statusBadge(row.status_verifikasi)}</td>
       <td>${tanggal}</td>
       <td class="row-actions">
@@ -271,33 +278,33 @@ async function openDetail(id) {
 
   activeRowId = id;
 
-  const [urlKK, urlKTP, urlRumah] = await Promise.all([
+  const [urlKK, urlRumah] = await Promise.all([
     getSignedUrl(row.foto_kk_url),
-    getSignedUrl(row.foto_ktp_url),
-    getSignedUrl(row.foto_kondisi_rumah_url),
+    getSignedUrl(row.foto_rumah_url),
   ]);
 
-  const kategoriChips = (row.kategori_permasalahan || [])
-    .map((k) => `<span class="tag-chip">${k}</span>`)
-    .join("") || "-";
+  const isDesil1to5 = ["1", "2", "3", "4", "5"].includes(row.status_desil);
+
+  const namaAnakList =
+    Array.isArray(row.nama_anak_tidak_sekolah) && row.nama_anak_tidak_sekolah.length
+      ? row.nama_anak_tidak_sekolah.join(", ")
+      : "-";
 
   modalContent.innerHTML = `
     <dl>
       <dt>Nama Kepala Keluarga</dt><dd>${row.nama_kepala_keluarga || "-"}</dd>
       <dt>Nomor KK</dt><dd>${row.nomor_kk || "-"}</dd>
       <dt>NIK</dt><dd>${row.nik || "-"}</dd>
-      <dt>Alamat</dt><dd>${row.alamat || "-"}, RT ${row.rt || "-"}/RW ${row.rw || "-"}, Dusun ${row.dusun || "-"}, ${row.desa || "-"}</dd>
-      <dt>No. Telepon</dt><dd>${row.no_telepon || "-"}</dd>
-      <dt>Kategori Permasalahan</dt><dd>${kategoriChips}${row.kategori_lainnya ? ` &mdash; ${row.kategori_lainnya}` : ""}</dd>
-      <dt>Anak Tidak Sekolah</dt><dd>${row.anak_tidak_sekolah ? `Ya (${row.jumlah_anak_tidak_sekolah || 0} anak) &mdash; ${row.keterangan_anak_tidak_sekolah || "-"}` : "Tidak"}</dd>
-      <dt>Rumah Belum Berplester</dt><dd>${row.rumah_belum_berplester ? "Ya" : "Tidak"}</dd>
-      <dt>Belum Ada Listrik</dt><dd>${row.belum_ada_listrik ? "Ya" : "Tidak"}</dd>
-      <dt>Status Desil</dt><dd>${row.status_desil || "-"}</dd>
-      <dt>Calon Mahasiswa</dt><dd>${row.ada_anak_calon_mahasiswa ? "Ya" : "Tidak"}</dd>
+      <dt>Pekerjaan</dt><dd>${row.pekerjaan || "-"}</dd>
+      <dt>Alamat</dt><dd>${row.alamat || "-"}, RT ${row.rt || "-"}/RW ${row.rw || "-"}</dd>
+      <dt>Status Desil</dt><dd>${labelDesil(row.status_desil)}</dd>
+      ${isDesil1to5 ? `<dt>Ada Anak Ingin Kuliah</dt><dd>${row.anak_ingin_kuliah ? "Ya" : "Tidak"}</dd>` : ""}
+      <dt>Rumah Lantai Tanah</dt><dd>${row.rumah_lantai_tanah ? "Ya" : "Tidak"}</dd>
+      <dt>Rumah Belum Memiliki Listrik</dt><dd>${row.belum_ada_listrik ? "Ya" : "Tidak"}</dd>
+      <dt>Ada Anak Tidak Sekolah</dt><dd>${row.anak_tidak_sekolah ? `Ya &mdash; ${namaAnakList}` : "Tidak"}</dd>
     </dl>
     <div class="modal-photos">
       ${urlKK ? `<button type="button" class="btn-download" data-url="${urlKK}" data-filename="foto-kk-${row.nomor_kk || "data"}.jpg">Unduh Foto KK</button>` : ""}
-      ${urlKTP ? `<button type="button" class="btn-download" data-url="${urlKTP}" data-filename="foto-ktp-${row.nomor_kk || "data"}.jpg">Unduh Foto KTP</button>` : `<span class="hint-text">Foto KTP tidak diunggah</span>`}
       ${urlRumah ? `<button type="button" class="btn-download" data-url="${urlRumah}" data-filename="foto-rumah-${row.nomor_kk || "data"}.jpg">Unduh Foto Rumah</button>` : ""}
     </div>
   `;
@@ -350,9 +357,7 @@ async function deleteRow(id) {
   const row = currentRows.find((r) => r.id === id);
 
   // Hapus foto terkait di storage (jika ada) supaya tidak jadi sampah bucket.
-  const paths = [row?.foto_kk_url, row?.foto_ktp_url, row?.foto_kondisi_rumah_url].filter(
-    Boolean
-  );
+  const paths = [row?.foto_kk_url, row?.foto_rumah_url].filter(Boolean);
   if (paths.length) {
     const { error: storageError } = await supabaseClient.storage
       .from(BUCKET_NAME)
@@ -388,15 +393,6 @@ btnHapus.addEventListener("click", () => {
 });
 
 // ================= EKSPOR EXCEL (RAPI & SIAP PRINT) =================
-const labelKategori = {
-  pendidikan: "Pendidikan",
-  perumahan: "Perumahan",
-  kelistrikan: "Kelistrikan",
-  ekonomi: "Ekonomi",
-  kesehatan: "Kesehatan",
-  lainnya: "Lainnya",
-};
-
 const labelStatus = {
   menunggu: "Menunggu",
   terverifikasi: "Terverifikasi",
@@ -435,19 +431,16 @@ exportBtn.addEventListener("click", async () => {
       { header: "Nama Kepala Keluarga", key: "nama", width: 24 },
       { header: "Nomor KK", key: "kk", width: 18 },
       { header: "NIK", key: "nik", width: 18 },
+      { header: "Pekerjaan", key: "pekerjaan", width: 18 },
       { header: "Alamat", key: "alamat", width: 22 },
       { header: "RT", key: "rt", width: 6 },
       { header: "RW", key: "rw", width: 6 },
-      { header: "Dusun", key: "dusun", width: 14 },
-      { header: "Desa", key: "desa", width: 12 },
-      { header: "No. Telepon", key: "telepon", width: 16 },
-      { header: "Kategori Permasalahan", key: "kategori", width: 26 },
-      { header: "Anak Tidak Sekolah", key: "anak", width: 16 },
-      { header: "Jml. Anak", key: "jml_anak", width: 10 },
-      { header: "Rumah Belum Berplester", key: "rumah", width: 18 },
+      { header: "Status Desil", key: "desil", width: 14 },
+      { header: "Anak Ingin Kuliah", key: "ingin_kuliah", width: 16 },
+      { header: "Rumah Lantai Tanah", key: "lantai", width: 16 },
       { header: "Belum Ada Listrik", key: "listrik", width: 16 },
-      { header: "Status Desil", key: "desil", width: 12 },
-      { header: "Calon Mahasiswa", key: "mahasiswa", width: 15 },
+      { header: "Anak Tidak Sekolah", key: "tidak_sekolah", width: 16 },
+      { header: "Nama Anak Tidak Sekolah", key: "nama_anak", width: 26 },
       { header: "Status Verifikasi", key: "status", width: 16 },
       { header: "Tanggal Masuk", key: "tanggal", width: 15 },
     ];
@@ -493,26 +486,26 @@ exportBtn.addEventListener("click", async () => {
           })
         : "-";
 
+      const isDesil1to5 = ["1", "2", "3", "4", "5"].includes(row.status_desil);
+
       const dataRow = sheet.addRow({
         no: index + 1,
         nama: row.nama_kepala_keluarga || "-",
         kk: row.nomor_kk || "-",
         nik: row.nik || "-",
+        pekerjaan: row.pekerjaan || "-",
         alamat: row.alamat || "-",
         rt: row.rt || "-",
         rw: row.rw || "-",
-        dusun: row.dusun || "-",
-        desa: row.desa || "-",
-        telepon: row.no_telepon || "-",
-        kategori: (row.kategori_permasalahan || [])
-          .map((k) => labelKategori[k] || k)
-          .join(", ") || "-",
-        anak: row.anak_tidak_sekolah ? "Ya" : "Tidak",
-        jml_anak: row.anak_tidak_sekolah ? row.jumlah_anak_tidak_sekolah || 0 : 0,
-        rumah: row.rumah_belum_berplester ? "Ya" : "Tidak",
+        desil: labelDesil(row.status_desil),
+        ingin_kuliah: isDesil1to5 ? (row.anak_ingin_kuliah ? "Ya" : "Tidak") : "-",
+        lantai: row.rumah_lantai_tanah ? "Ya" : "Tidak",
         listrik: row.belum_ada_listrik ? "Ya" : "Tidak",
-        desil: row.status_desil === "tidak_terdaftar" ? "Tidak Terdaftar" : `Desil ${row.status_desil || "-"}`,
-        mahasiswa: row.ada_anak_calon_mahasiswa ? "Ya" : "Tidak",
+        tidak_sekolah: row.anak_tidak_sekolah ? "Ya" : "Tidak",
+        nama_anak:
+          Array.isArray(row.nama_anak_tidak_sekolah) && row.nama_anak_tidak_sekolah.length
+            ? row.nama_anak_tidak_sekolah.join(", ")
+            : "-",
         status: labelStatus[row.status_verifikasi] || row.status_verifikasi || "-",
         tanggal,
       });

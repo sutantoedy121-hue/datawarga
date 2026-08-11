@@ -60,12 +60,16 @@
           <span class="stat-label">Menunggu Verifikasi</span>
         </div>
         <div class="stat-card">
-          <span class="stat-value" id="stat-anak">0</span>
+          <span class="stat-value" id="stat-anak-tidak-sekolah">0</span>
           <span class="stat-label">Anak Tidak Sekolah</span>
         </div>
         <div class="stat-card">
-          <span class="stat-value" id="stat-rumah">0</span>
-          <span class="stat-label">Rumah Belum Berplester</span>
+          <span class="stat-value" id="stat-anak-ingin-kuliah">0</span>
+          <span class="stat-label">Anak Ingin Kuliah (Desil 1-5)</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="stat-lantai-tanah">0</span>
+          <span class="stat-label">Rumah Lantai Tanah</span>
         </div>
         <div class="stat-card">
           <span class="stat-value" id="stat-listrik">0</span>
@@ -76,7 +80,7 @@
       <!-- Filter -->
       <div class="card filter-bar">
         <div class="field">
-          <label for="filter-search">Cari (nama / NIK / no KK)</label>
+          <label for="filter-search">Cari (nama / NIK / no KK / pekerjaan)</label>
           <input type="text" id="filter-search" placeholder="Ketik untuk mencari...">
         </div>
 
@@ -91,15 +95,20 @@
         </div>
 
         <div class="field">
-          <label for="filter-kategori">Kategori Permasalahan</label>
-          <select id="filter-kategori">
+          <label for="filter-desil">Desil</label>
+          <select id="filter-desil">
             <option value="">Semua</option>
-            <option value="pendidikan">Pendidikan</option>
-            <option value="perumahan">Perumahan</option>
-            <option value="kelistrikan">Kelistrikan</option>
-            <option value="ekonomi">Ekonomi</option>
-            <option value="kesehatan">Kesehatan</option>
-            <option value="lainnya">Lainnya</option>
+            <option value="tidak_terdaftar">Tidak Terdaftar</option>
+            <option value="1">Desil 1</option>
+            <option value="2">Desil 2</option>
+            <option value="3">Desil 3</option>
+            <option value="4">Desil 4</option>
+            <option value="5">Desil 5</option>
+            <option value="6">Desil 6</option>
+            <option value="7">Desil 7</option>
+            <option value="8">Desil 8</option>
+            <option value="9">Desil 9</option>
+            <option value="10">Desil 10</option>
           </select>
         </div>
 
@@ -115,8 +124,10 @@
               <tr>
                 <th>Nama Kepala Keluarga</th>
                 <th>No. KK</th>
+                <th>NIK</th>
+                <th>Pekerjaan</th>
                 <th>RT/RW</th>
-                <th>Kategori</th>
+                <th>Desil</th>
                 <th>Status</th>
                 <th>Tanggal</th>
                 <th></th>
